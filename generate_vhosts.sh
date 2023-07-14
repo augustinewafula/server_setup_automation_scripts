@@ -40,8 +40,8 @@ generate_backend() {
     </Directory>
 
     LogLevel debug
-    ErrorLog ${APACHE_LOG_DIR}/$backend_domain_name.error.log
-    CustomLog ${APACHE_LOG_DIR}/$backend_domain_name.access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/$backend_domain_name.error.log
+    CustomLog \${APACHE_LOG_DIR}/$backend_domain_name.access.log combined
 RewriteEngine on
 RewriteCond %{SERVER_NAME} =$backend_domain_name [OR]
 RewriteCond %{SERVER_NAME} =www.$backend_domain_name
@@ -66,8 +66,8 @@ generate_frontend() {
     </Directory>
 
     LogLevel debug
-    ErrorLog ${APACHE_LOG_DIR}/$frontend_domain_name.error.log
-    CustomLog ${APACHE_LOG_DIR}/$frontend_domain_name.access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/$frontend_domain_name.error.log
+    CustomLog \${APACHE_LOG_DIR}/$frontend_domain_name.access.log combined
 RewriteEngine on
 RewriteCond %{SERVER_NAME} =$frontend_domain_name [OR]
 RewriteCond %{SERVER_NAME} =www.$frontend_domain_name
