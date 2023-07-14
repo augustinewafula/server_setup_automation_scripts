@@ -1,39 +1,41 @@
-# Apache Virtual Host Generator
+# Server Setup Automation Scripts
 
-This is a simple Bash script to automatically generate Apache virtual host configurations for your projects. It generates separate configurations for the frontend and backend based on the user input.
+This repository contains Bash scripts to automate the setup of various server components, including Apache virtual hosts and MySQL databases.
+
+## Current Scripts
+
+1. **Apache Virtual Host Generator (generate_vhosts.sh):** This script generates Apache virtual host configurations based on user input.
+
+2. **MySQL Database and User Generator (create_mysql_db.sh):** This script creates a new MySQL user and database, also based on user input.
 
 ## Pre-requisites
 
-The script needs to be run on a system with Apache installed and with root privileges as it writes the configuration files to `/etc/apache2/sites-available/`.
+The scripts need to be run on a system with Apache and MySQL installed, and with root privileges as they write to system directories and modify system configurations.
 
 ## Usage
 
-1. Download the script file `generate_vhosts.sh` to your local machine.
+1. Download the script files to your local machine.
 
-2. Make the script executable with the following command:
+2. Make the scripts executable with the following commands:
 
-```bash
-chmod +x generate_vhosts.sh
-```
+    ```bash
+    chmod +x generate_vhosts.sh
+    chmod +x create_mysql_db.sh
+    ```
 
-3. Run the script with root privileges:
+3. Run the scripts with root privileges:
 
-```bash
-sudo ./generate_vhosts.sh
-```
+    ```bash
+    sudo ./generate_vhosts.sh
+    sudo ./create_mysql_db.sh
+    ```
 
-4. Follow the interactive prompts. You will be asked whether you want to generate configurations for the frontend, backend, or both. You will then be asked to provide the domain name and the document root path for the configurations you have chosen to generate.
+For `generate_vhosts.sh`, follow the interactive prompts to generate configurations for the frontend, backend, or both. You will need to provide the domain name and the document root path.
 
-5. After successfully running the script, the configurations will be saved in `/etc/apache2/sites-available/` with the domain name as the file name and `.conf` extension.
+For `create_mysql_db.sh`, you will be asked for the username, password, database name, and host for the new MySQL user and database.
+
+After running the scripts, the Apache configurations will be saved in `/etc/apache2/sites-available/` and the MySQL user and database will be created.
 
 ## Important Note
 
-Don't forget to enable the newly created sites using `a2ensite` and reload or restart the Apache service for the changes to take effect.
-
-## Support
-
-If you encounter any issues or need further assistance, please open an issue in this repository.
-
-## License
-
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+Don't forget to enable the newly created sites using `a2ensite` and reload or
