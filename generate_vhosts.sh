@@ -1,29 +1,5 @@
 #!/bin/bash
 
-echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend or [3] Both?"
-read choice
-
-if [ $choice -lt 1 ] || [ $choice -gt 3 ]; then
-    echo "Invalid choice"
-    exit 1
-fi
-
-if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
-    echo "Please enter the backend domain name:"
-    read backend_domain_name
-
-    echo "Please enter the backend site path:"
-    read backend_site_path
-fi
-
-if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
-    echo "Please enter the frontend domain name:"
-    read frontend_domain_name
-
-    echo "Please enter the frontend site path:"
-    read frontend_site_path
-fi
-
 generate_backend() {
     echo "<VirtualHost *:80>
     ServerAdmin admin@$backend_domain_name
@@ -75,12 +51,50 @@ RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 </VirtualHost>"
 }
 
+save_config() {
+    local domain=$1
+    local config=$2
+
+    local filename="/etc/apache2/sites-available/$domain.conf"
+
+    if [[ -e $filename ]]; then
+        read -p "Configuration file $filename already exists. Do you want to overwrite it? [y/N] " yn
+        case $yn in
+            [Yy]* ) echo "$config" > "$filename"; echo "Configuration for $domain has been written to $filename.";;
+            * ) echo "Skipping...";;
+        esac
+    else
+        echo "$config" > "$filename"
+        echo "Configuration for $domain has been written to $filename."
+    fi
+}
+
+echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend or [3] Both?"
+read choice
+
+if [ $choice -lt 1 ] || [ $choice -gt 3 ]; then
+    echo "Invalid choice"
+    exit 1
+fi
+
 if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
-    generate_backend > /etc/apache2/sites-available/$backend_domain_name.conf
+    echo "Please enter the backend domain name:"
+    read backend_domain_name
+
+    echo "Please enter the backend site path:"
+    read backend_site_path
+
+    save_config "$backend_domain_name" "$(generate_backend)"
 fi
 
 if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
-    generate_frontend > /etc/apache2/sites-available/$frontend_domain_name.conf
+    echo "Please enter the frontend domain name:"
+    read frontend_domain_name
+
+    echo "Please enter the frontend site path:"
+    read frontend_site_path
+
+    save_config "$frontend_domain_name" "$(generate_frontend)"
 fi
 
-echo "V-hosts generated successfully"
+echo "V-hosts generation completed."
