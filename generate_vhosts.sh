@@ -69,6 +69,8 @@ save_config() {
     fi
 }
 
+enable_frontend=false
+
 echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend or [3] Both?"
 read choice
 
@@ -88,6 +90,8 @@ if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
 fi
 
 if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
+    enable_frontend=true
+
     echo "Please enter the frontend domain name:"
     read frontend_domain_name
 
@@ -103,18 +107,29 @@ echo "V-hosts generation completed."
 read -p "Do you want to enable the generated sites? [y/N] " enable_sites
 
 if [[ $enable_sites =~ ^[Yy]$ ]]; then
-    # Enable the sites and restart Apache
-    for domain in "$backend_domain_name" "$frontend_domain_name"; do
-        sudo a2ensite "$domain.conf"
-    done
+    # Enable the backend site and restart Apache
+    if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+        sudo a2ensite "$backend_domain_name.conf"
+    fi
+
+    # Enable the frontend site and restart Apache if it was generated
+    if [ "$enable_frontend" = true ]; then
+        sudo a2ensite "$frontend_domain_name.conf"
+    fi
 
     sudo systemctl restart apache2
 else
     # Provide commands for the user to enable the sites and restart Apache manually
-    for domain in "$backend_domain_name" "$frontend_domain_name"; do
-        echo "To enable the site, run:"
-        echo "sudo a2ensite $domain.conf"
-    done
+    if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+        echo "To enable $backend_domain_name.conf, run:"
+        echo "sudo a2ensite $backend_domain_name.conf"
+    fi
+
+    # Show commands for enabling the frontend site if it was generated
+    if [ "$enable_frontend" = true ]; then
+        echo "To enable $frontend_domain_name.conf, run:"
+        echo "sudo a2ensite $frontend_domain_name.conf"
+    fi
 
     echo "To restart Apache, run:"
     echo "sudo systemctl restart apache2"
