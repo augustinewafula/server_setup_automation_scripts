@@ -98,3 +98,26 @@ if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
 fi
 
 echo "V-hosts generation completed."
+
+# Ask if the user wants to enable the sites
+read -p "Do you want to enable the generated sites? [y/N] " enable_sites
+
+if [[ $enable_sites =~ ^[Yy]$ ]]; then
+    # Enable the sites and restart Apache
+    for domain in "$backend_domain_name" "$frontend_domain_name"; do
+        sudo a2ensite "$domain.conf"
+    done
+
+    sudo systemctl restart apache2
+else
+    # Provide commands for the user to enable the sites and restart Apache manually
+    for domain in "$backend_domain_name" "$frontend_domain_name"; do
+        echo "To enable the site, run:"
+        echo "sudo a2ensite $domain.conf"
+    done
+
+    echo "To restart Apache, run:"
+    echo "sudo systemctl restart apache2"
+fi
+
+echo "V-hosts generation completed."
