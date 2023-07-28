@@ -69,6 +69,7 @@ setup_backend() {
         cp .env.example .env
 
         # Set up the database using create_mysql_db.sh script
+        cd "$DEFAULT_DIR"  # Return to the default directory
         run_task_with_output "Setting up the database"
         ./create_mysql_db.sh
         task_completed "Setting up the database"
@@ -81,6 +82,8 @@ setup_backend() {
         sed -i "s/DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
         sed -i "s/DB_PASSWORD=.*$/DB_PASSWORD=$db_password/g" .env
 
+        # Run database migrations
+        cd "$backend_dir_name"  # Return to the backend directory
         run_task_with_output "Running database migrations in backend"
         php artisan migrate:fresh --seed
         task_completed "Running database migrations in backend"
