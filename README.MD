@@ -18,7 +18,7 @@ The scripts need to be run on a system with Apache and MySQL installed, and with
 
 1. Download the script files to your local machine.
 
-2. **Important: Update the `config.txt` file with the correct values.** The `config.txt` file will be provided in the repository. Open the `config.txt` file and replace the placeholders with the actual values for your setup. Here's the format of the `config.txt` file:
+2. **Important: Copy the contents of `config.example.txt` and save it as `config.txt` with the correct values.** Replace the placeholders with the actual values for your setup. Here's the format of the `config.txt` file:
 
    ```plaintext
    backend_domain_name=your_backend_domain
