@@ -80,9 +80,10 @@ setup_backend() {
         local db_user=$(read_value "mysql_username")
         local db_password=$(read_value "mysql_password")
         cd "$backend_dir_name"
+        escaped_db_password=$(printf "%q" "$db_password")
         sed -i "s/DB_DATABASE=.*$/DB_DATABASE=$db_name/g" .env
         sed -i "s/DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
-        sed -i "s/DB_PASSWORD=.*$/DB_PASSWORD=$db_password/g" .env
+        sed -i "s/DB_PASSWORD=.*$/DB_PASSWORD=$escaped_db_password/g" .env
         task_completed "Updating database credentials on .env file"
 
         # Run database migrations
