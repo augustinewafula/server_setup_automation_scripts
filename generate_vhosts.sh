@@ -83,8 +83,8 @@ save_config() {
 
 enable_frontend=false
 
-echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend or [3] Both?"
-read choice
+echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend, or [3] Both?"
+read -p "Please enter the number corresponding to your choice: " choice
 
 if [ $choice -lt 1 ] || [ $choice -gt 3 ]; then
     echo "Invalid choice"
@@ -124,6 +124,9 @@ if [[ $enable_sites =~ ^[Yy]$ ]]; then
     fi
 
     sudo systemctl restart apache2
+
+    # Ask if the user wants to enable HTTPS
+    enable_https
 else
     # Provide commands for the user to enable the sites and restart Apache manually
     if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
@@ -139,6 +142,9 @@ else
 
     echo "To restart Apache, run:"
     echo "sudo systemctl restart apache2"
+
+    # Ask if the user wants to enable HTTPS
+    enable_https
 fi
 
-echo "V-hosts generation completed."
+echo "V-hosts generation and HTTPS enablement completed."
