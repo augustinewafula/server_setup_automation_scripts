@@ -132,11 +132,13 @@ read -p "Do you want to enable the generated sites? [y/N] " enable_sites
 if [[ $enable_sites =~ ^[Yy]$ ]]; then
     # Enable the backend site and restart Apache
     if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+        echo "Enabling $backend_domain_name.conf..."
         sudo a2ensite "$backend_domain_name.conf"
     fi
 
     # Enable the frontend site and restart Apache if it was generated
     if [ "$enable_frontend" = true ]; then
+        echo "Enabling $frontend_domain_name.conf..."
         sudo a2ensite "$frontend_domain_name.conf"
     fi
 
