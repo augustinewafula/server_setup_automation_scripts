@@ -109,8 +109,8 @@ if [ $choice -lt 1 ] || [ $choice -gt 3 ]; then
 fi
 
 if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
-    read_value "backend_domain_name"
-    read_value "backend_site_path"
+    backend_domain_name=$(read_value "backend_domain_name")
+    backend_site_path=$(read_value "backend_site_path")
 
     save_config "$backend_domain_name" "$(generate_backend)"
 fi
@@ -118,8 +118,8 @@ fi
 if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
     enable_frontend=true
 
-    read_value "frontend_domain_name"
-    read_value "frontend_site_path"
+    frontend_domain_name=$(read_value "frontend_domain_name")
+    frontend_site_path=$(read_value "frontend_site_path")
 
     save_config "$frontend_domain_name" "$(generate_frontend)"
 fi
