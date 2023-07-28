@@ -75,11 +75,11 @@ setup_backend() {
         task_completed "Setting up the database"
 
         # Update database credentials in .env file
-        cd "$backend_dir_name"
         run_task_with_output "Updating database credentials on .env file"
         local db_name=$(read_value "mysql_database")
         local db_user=$(read_value "mysql_username")
         local db_password=$(read_value "mysql_password")
+        cd "$backend_dir_name"
         sed -i "s/DB_DATABASE=.*$/DB_DATABASE=$db_name/g" .env
         sed -i "s/DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
         sed -i "s/DB_PASSWORD=.*$/DB_PASSWORD=$db_password/g" .env
