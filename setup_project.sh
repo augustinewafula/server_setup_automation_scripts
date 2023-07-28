@@ -113,6 +113,7 @@ setup_frontend() {
 
 # Function to set up vhosts using generate_vhosts.sh script
 setup_vhosts() {
+    cd "$DEFAULT_DIR"  # Return to the default directory
     read -p "Do you want to set up vhosts? [y/N] " setup_vhosts
     if [[ $setup_vhosts =~ ^[Yy]$ ]]; then
         run_task_with_output "Setting up vhosts"
