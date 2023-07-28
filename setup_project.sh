@@ -61,12 +61,13 @@ setup_backend() {
         sudo chmod -R 777 storage
         task_completed "Setting proper ownership and permissions in backend"
 
+        # Copy .env.example to .env
+        cp .env.example .env
+
+        # Generate Laravel application key
         run_task_with_output "Generating Laravel application key in backend"
         php artisan key:generate
         task_completed "Generating Laravel application key in backend"
-
-        # Copy .env.example to .env
-        cp .env.example .env
 
         # Set APP_ENV to "production" and APP_DEBUG to "false" in .env
         sed -i "s/^APP_ENV=.*$/APP_ENV=production/g" .env
