@@ -57,6 +57,7 @@ setup_backend() {
         sed -i "s/DB_DATABASE=.*$/DB_DATABASE=$db_name/g" .env
         sed -i "s/DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
         sed -i "s/DB_PASSWORD=.*$/DB_PASSWORD=$db_password/g" .env
+        php artisan migrate:fresh --seed
     })
 
     cd "$DEFAULT_DIR"  # Return to the default directory
