@@ -10,9 +10,13 @@ read_value() {
         read -p "Please enter the $key: " value
         echo "$key=$value" >> "$CONFIG_FILE"
     fi
+    echo "$value"
 }
 
 generate_backend() {
+    local backend_domain_name=$1
+    local backend_site_path=$2
+
     echo "<VirtualHost *:80>
     ServerAdmin admin@$backend_domain_name
     ServerName $backend_domain_name
@@ -38,6 +42,9 @@ RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 }
 
 generate_frontend() {
+    local frontend_domain_name=$1
+    local frontend_site_path=$2
+
     echo "<VirtualHost *:80>
     ServerAdmin admin@$frontend_domain_name
     ServerName $frontend_domain_name
@@ -112,7 +119,7 @@ if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
     backend_domain_name=$(read_value "backend_domain_name")
     backend_site_path=$(read_value "backend_site_path")
 
-    save_config "$backend_domain_name" "$(generate_backend)"
+    save_config "$backend_domain_name" "$(generate_backend "$backend_domain_name" "$backend_site_path")"
 fi
 
 if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
@@ -121,7 +128,7 @@ if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
     frontend_domain_name=$(read_value "frontend_domain_name")
     frontend_site_path=$(read_value "frontend_site_path")
 
-    save_config "$frontend_domain_name" "$(generate_frontend)"
+    save_config "$frontend_domain_name" "$(generate_frontend "$frontend_domain_name" "$frontend_site_path")"
 fi
 
 echo "V-hosts generation completed."
