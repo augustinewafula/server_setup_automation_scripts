@@ -1,5 +1,17 @@
 #!/bin/bash
 
+CONFIG_FILE="config.txt"
+
+# Function to read value from config file or prompt user for input
+read_value() {
+    local key=$1
+    local value=$(grep "^$key=" "$CONFIG_FILE" | cut -d '=' -f 2-)
+    if [ -z "$value" ]; then
+        read -p "Please enter the $key: " value
+        echo "$key=$value" >> "$CONFIG_FILE"
+    fi
+}
+
 generate_backend() {
     echo "<VirtualHost *:80>
     ServerAdmin admin@$backend_domain_name
@@ -80,11 +92,8 @@ if [ $choice -lt 1 ] || [ $choice -gt 3 ]; then
 fi
 
 if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
-    echo "Please enter the backend domain name:"
-    read backend_domain_name
-
-    echo "Please enter the backend site path:"
-    read backend_site_path
+    read_value "backend_domain_name"
+    read_value "backend_site_path"
 
     save_config "$backend_domain_name" "$(generate_backend)"
 fi
@@ -92,11 +101,8 @@ fi
 if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
     enable_frontend=true
 
-    echo "Please enter the frontend domain name:"
-    read frontend_domain_name
-
-    echo "Please enter the frontend site path:"
-    read frontend_site_path
+    read_value "frontend_domain_name"
+    read_value "frontend_site_path"
 
     save_config "$frontend_domain_name" "$(generate_frontend)"
 fi
