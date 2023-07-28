@@ -17,7 +17,7 @@ read_value() {
 mysql_user=$(read_value "mysql_username")
 mysql_password=$(read_value "mysql_password")
 mysql_database=$(read_value "mysql_database")
-mysql_host=$(read_value "_mysql_host")
+mysql_host=$(read_value "mysql_host")
 
 # Check if user already exists
 userCheck=$(mysql -u root -p"$mysql_password" -sse "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '$mysql_user')")
