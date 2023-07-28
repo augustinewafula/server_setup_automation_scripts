@@ -81,6 +81,23 @@ save_config() {
     fi
 }
 
+enable_https() {
+    read -p "Do you want to enable HTTPS on the created sites? [y/N] " enable_https
+    if [[ $enable_https =~ ^[Yy]$ ]]; then
+        # Enable HTTPS using certbot for backend site
+        if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+            sudo certbot --apache -d "$backend_domain_name"
+        fi
+
+        # Enable HTTPS using certbot for frontend site if it was generated
+        if [ "$enable_frontend" = true ]; then
+            sudo certbot --apache -d "$frontend_domain_name"
+        fi
+    else
+        echo "Skipping HTTPS enablement."
+    fi
+}
+
 enable_frontend=false
 
 echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend, or [3] Both?"
