@@ -68,6 +68,10 @@ setup_backend() {
         # Copy .env.example to .env
         cp .env.example .env
 
+        # Set APP_ENV to "production" and APP_DEBUG to "false" in .env
+        sed -i "s/^APP_ENV=.*$/APP_ENV=production/g" .env
+        sed -i "s/^APP_DEBUG=.*$/APP_DEBUG=false/g" .env
+
         # Set up the database using create_mysql_db.sh script
         cd "$DEFAULT_DIR"  # Return to the default directory
         run_task_with_output "Setting up the database"
