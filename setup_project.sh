@@ -30,15 +30,16 @@ task_completed() {
 clone_or_pull_repo() {
     local url=$1
     local dir_name=$2
-    local access_token=$3
+    local access_token=$(read_value "github_access_token")
 
     if [ -d "$dir_name" ]; then
         run_task_with_output "Git pull in $dir_name"
         (cd "$dir_name" && GIT_ASKPASS=/bin/true git pull origin main)
         task_completed "Git pull in $dir_name"
     else
+        # Modify the clone command to include the access token in the URL
         run_task_with_output "Git clone $url into $dir_name"
-        GIT_ASKPASS=/bin/true git clone "$url" "$dir_name"
+        GIT_ASKPASS=/bin/true git clone "${url/github.com/$access_token@github.com}" "$dir_name"
         task_completed "Git clone $url into $dir_name"
     fi
 }
