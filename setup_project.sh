@@ -32,6 +32,9 @@ clone_or_pull_repo() {
     local dir_name=$2
     local access_token=$(read_value "github_access_token")
 
+    # Remove any carriage return character from directory name
+    dir_name=$(echo $dir_name | tr -d '\r')
+
     if [ -d "$dir_name" ]; then
         run_task_with_output "Git pull in $dir_name"
         (cd "$dir_name" && GIT_ASKPASS=/bin/true git pull origin main)
