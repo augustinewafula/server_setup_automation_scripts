@@ -2,10 +2,17 @@
 
 CONFIG_FILE="config.txt"
 
+# Function to clean up directory name by removing any carriage return character
+clean_input() {
+    local input=$1
+    echo $(echo $input | tr -d '\r')
+}
+
 # Function to read value from config file or prompt user for input
 read_value() {
     local key=$1
     local value=$(grep "^$key=" "$CONFIG_FILE" | cut -d '=' -f 2-)
+    value=$(clean_input "$value")
     if [ -z "$value" ]; then
         read -p "Please enter the $key: " value
         echo "$key=$value" >> "$CONFIG_FILE"
