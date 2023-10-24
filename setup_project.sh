@@ -3,6 +3,12 @@
 DEFAULT_DIR=$(pwd)
 CONFIG_FILE="config.txt"
 
+# Function to clean up directory name by removing any carriage return character
+clean_dir_name() {
+    local dir_name=$1
+    echo $(echo $dir_name | tr -d '\r')
+}
+
 # Function to read value from config file or prompt user for input
 read_value() {
     local key=$1
@@ -33,7 +39,7 @@ clone_or_pull_repo() {
     local access_token=$(read_value "github_access_token")
 
     # Remove any carriage return character from directory name
-    dir_name=$(echo $dir_name | tr -d '\r')
+    dir_name=$(dir_name "$dir_name")
 
     if [ -d "$dir_name" ]; then
         run_task_with_output "Git pull in $dir_name"
@@ -51,6 +57,7 @@ clone_or_pull_repo() {
 setup_backend() {
     local backend_repo_url=$(read_value "backend_repo_url")
     local backend_dir_name=$(read_value "backend_dir_name")
+    backend_dir_name=$(clean_dir_name "$backend_dir_name")
 
     clone_or_pull_repo "$backend_repo_url" "$backend_dir_name"
 
@@ -107,6 +114,7 @@ setup_backend() {
 setup_frontend() {
     local frontend_repo_url=$(read_value "frontend_repo_url")
     local frontend_dir_name=$(read_value "frontend_dir_name")
+    frontend_dir_name=$(clean_dir_name "$frontend_dir_name")
 
     clone_or_pull_repo "$frontend_repo_url" "$frontend_dir_name"
 
