@@ -4,15 +4,16 @@ DEFAULT_DIR=$(pwd)
 CONFIG_FILE="config.txt"
 
 # Function to clean up directory name by removing any carriage return character
-clean_dir_name() {
-    local dir_name=$1
-    echo $(echo $dir_name | tr -d '\r')
+clean_input() {
+    local input=$1
+    echo $(echo $input | tr -d '\r')
 }
 
 # Function to read value from config file or prompt user for input
 read_value() {
     local key=$1
     local value=$(grep "^$key=" "$CONFIG_FILE" | cut -d '=' -f 2-)
+    value=$(clean_input "$value")
     if [ -z "$value" ]; then
         read -p "Please enter the $key: " value
         echo "$key=$value" >> "$CONFIG_FILE"
@@ -38,9 +39,6 @@ clone_or_pull_repo() {
     local dir_name=$2
     local access_token=$(read_value "github_access_token")
 
-    # Remove any carriage return character from directory name
-    dir_name=$(clean_dir_name "$dir_name")
-
     if [ -d "$dir_name" ]; then
         run_task_with_output "Git pull in $dir_name"
         (cd "$dir_name" && GIT_ASKPASS=/bin/true git pull origin main)
@@ -57,7 +55,6 @@ clone_or_pull_repo() {
 setup_backend() {
     local backend_repo_url=$(read_value "backend_repo_url")
     local backend_dir_name=$(read_value "backend_dir_name")
-    backend_dir_name=$(clean_dir_name "$backend_dir_name")
 
     clone_or_pull_repo "$backend_repo_url" "$backend_dir_name"
 
@@ -114,7 +111,6 @@ setup_backend() {
 setup_frontend() {
     local frontend_repo_url=$(read_value "frontend_repo_url")
     local frontend_dir_name=$(read_value "frontend_dir_name")
-    frontend_dir_name=$(clean_dir_name "$frontend_dir_name")
 
     clone_or_pull_repo "$frontend_repo_url" "$frontend_dir_name"
 
@@ -145,6 +141,7 @@ setup_vhosts() {
 
 # Check if the repository is for the backend (Laravel)
 read -p "Do you want to set up the backend? [y/N] " is_backend
+is_backend=$(clean_input "$is_backend")
 
 if [[ $is_backend =~ ^[Yy]$ ]]; then
     backend_repo_url=$(read_value "backend_repo_url")
