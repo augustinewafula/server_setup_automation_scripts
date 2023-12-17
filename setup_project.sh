@@ -111,6 +111,8 @@ setup_backend() {
 setup_frontend() {
     local frontend_repo_url=$(read_value "frontend_repo_url")
     local frontend_dir_name=$(read_value "frontend_dir_name")
+    local backend_domain_name=$(read_value "backend_domain_name")
+    local app_name=$(read_value "app_name")
 
     clone_or_pull_repo "$frontend_repo_url" "$frontend_dir_name"
 
@@ -118,13 +120,22 @@ setup_frontend() {
         run_task_with_output "Running yarn install in frontend"
         yarn install
         cp .env.example .env.local
-        
-        echo "Please update the contents of .env.local with appropriate values."
-        echo "After updating, run 'yarn build' to build the frontend assets."
+
+        # Update .env.local with appropriate values
+        sed -i "s/^VUE_APP_API_BASE_URL=.*$/VUE_APP_API_BASE_URL=https:\/\/$backend_domain_name/g" .env.local
+        sed -i "s/^VUE_APP_TITLE=.*$/VUE_APP_TITLE=$app_name/g" .env.local
+
+        echo "Updated .env.local with backend and app information."
+
+        # Run 'yarn build' to build frontend assets
+        run_task_with_output "Running yarn build in frontend"
+        yarn build
+        task_completed "Running yarn build in frontend"
     })
 
     cd "$DEFAULT_DIR"  # Return to the default directory
 }
+
 
 # Function to set up vhosts using generate_vhosts.sh script
 setup_vhosts() {
