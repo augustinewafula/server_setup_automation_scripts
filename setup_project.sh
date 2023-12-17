@@ -55,6 +55,7 @@ clone_or_pull_repo() {
 setup_backend() {
     local backend_repo_url=$(read_value "backend_repo_url")
     local backend_dir_name=$(read_value "backend_dir_name")
+    local app_name=$(read_value "app_name")
 
     clone_or_pull_repo "$backend_repo_url" "$backend_dir_name"
 
@@ -77,7 +78,8 @@ setup_backend() {
         php artisan key:generate
         task_completed "Generating Laravel application key in backend"
 
-        # Set APP_ENV to "production" and APP_DEBUG to "false" in .env
+        # Set APP_NAME, APP_ENV to "production" and APP_DEBUG to "false" in .env
+        sed -i "s/^APP_NAME=.*$/APP_NAME=$app_name/g" .env
         sed -i "s/^APP_ENV=.*$/APP_ENV=production/g" .env
         sed -i "s/^APP_DEBUG=.*$/APP_DEBUG=false/g" .env
 
