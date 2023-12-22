@@ -119,8 +119,14 @@ setup_frontend() {
     clone_or_pull_repo "$frontend_repo_url" "$frontend_dir_name"
 
     (cd "$frontend_dir_name" && {
+        # Check if Yarn is installed
+        if ! command -v yarn &> /dev/null; then
+            echo "Yarn not found. Please install Yarn before proceeding."
+            exit 1
+        fi
+
         run_task_with_output "Running yarn install in frontend"
-        yarn install
+        yarn install || { echo "Error: Yarn install failed."; exit 1; }
         cp .env.example .env.local
 
         # Update .env.local with appropriate values
@@ -131,12 +137,13 @@ setup_frontend() {
 
         # Run 'yarn build' to build frontend assets
         run_task_with_output "Running yarn build in frontend"
-        yarn build
+        yarn build || { echo "Error: Yarn build failed."; exit 1; }
         task_completed "Running yarn build in frontend"
     })
 
     cd "$DEFAULT_DIR"  # Return to the default directory
 }
+
 
 
 # Function to set up vhosts using generate_vhosts.sh script
