@@ -130,7 +130,7 @@ setup_frontend() {
         cp .env.example .env.local
 
         # Update .env.local with appropriate values
-        sed -i "s/^VUE_APP_API_BASE_URL=.*$/VUE_APP_API_BASE_URL=https:\/\/$backend_domain_name/g" .env.local
+        sed -i "s/^VUE_APP_API_BASE_URL=.*$/VUE_APP_API_BASE_URL=https:\/\/$backend_domain_name\/api\/v1\//g" .env.local
         sed -i "s/^VUE_APP_TITLE=.*$/VUE_APP_TITLE=$app_name/g" .env.local
 
         echo "Updated .env.local with backend and app information."
