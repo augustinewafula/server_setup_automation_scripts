@@ -174,7 +174,7 @@ fi
 # Set up the frontends if needed
 for i in 1 2; do
     read -p "Do you want to set up frontend $i? [y/N] " setup_frontend_$i
-    if [[ ${setup_frontend_$i} =~ ^[Yy]$ ]]; then
+    if [[ ${!setup_frontend_$i} =~ ^[Yy]$ ]]; then
         run_task_with_output "Setting up frontend $i"
         setup_frontend $i
         task_completed "Setting up frontend $i"
