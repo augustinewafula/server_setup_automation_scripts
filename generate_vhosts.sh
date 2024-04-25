@@ -103,40 +103,46 @@ enable_https() {
             sudo certbot --apache -d "$backend_domain_name"
         fi
 
-        # Enable HTTPS using certbot for frontend site if it was generated
-        if [ "$enable_frontend" = true ]; then
-            sudo certbot --apache -d "$frontend_domain_name"
-        fi
+        # Enable HTTPS using certbot for frontend sites if they were generated
+        for ((i=1; i<=2; i++)); do
+            if [ "${enable_frontends[$((i-1))]}" = true ]; then
+                sudo certbot --apache -d "${frontend_domain_names[$((i-1))]}"
+            fi
+        done
     else
         echo "Skipping HTTPS enablement."
     fi
 }
 
-enable_frontend=false
+enable_frontends=(false false)
+frontend_domain_names=()
 
-echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend, or [3] Both?"
+echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend 1, [3] Frontend 2, or [4] All?"
 read -p "Please enter the number corresponding to your choice: " choice
 
-if [ $choice -lt 1 ] || [ $choice -gt 3 ]; then
+if [ $choice -lt 1 ] || [ $choice -gt 4 ]; then
     echo "Invalid choice"
     exit 1
 fi
 
-if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+if [ $choice -eq 1 ] || [ $choice -eq 4 ]; then
     backend_domain_name=$(read_value "backend_domain_name")
     backend_site_path=$(read_value "backend_site_path")
 
     save_config "$backend_domain_name" "$(generate_backend "$backend_domain_name" "$backend_site_path")"
 fi
 
-if [ $choice -eq 2 ] || [ $choice -eq 3 ]; then
-    enable_frontend=true
+for ((i=1; i<=2; i++)); do
+    if [ $choice -eq $((i+1)) ] || [ $choice -eq 4 ]; then
+        enable_frontends[$((i-1))]=true
 
-    frontend_domain_name=$(read_value "frontend_domain_name")
-    frontend_site_path=$(read_value "frontend_site_path")
+        frontend_domain_name=$(read_value "frontend${i}_domain_name")
+        frontend_site_path=$(read_value "frontend${i}_site_path")
+        frontend_domain_names+=("$frontend_domain_name")
 
-    save_config "$frontend_domain_name" "$(generate_frontend "$frontend_domain_name" "$frontend_site_path")"
-fi
+        save_config "$frontend_domain_name" "$(generate_frontend "$frontend_domain_name" "$frontend_site_path")"
+    fi
+done
 
 echo "V-hosts generation completed."
 
@@ -145,16 +151,18 @@ read -p "Do you want to enable the generated sites? [y/N] " enable_sites
 
 if [[ $enable_sites =~ ^[Yy]$ ]]; then
     # Enable the backend site and restart Apache
-    if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+    if [ $choice -eq 1 ] || [ $choice -eq 4 ]; then
         echo "Enabling $backend_domain_name.conf..."
         sudo a2ensite "$backend_domain_name.conf"
     fi
 
-    # Enable the frontend site and restart Apache if it was generated
-    if [ "$enable_frontend" = true ]; then
-        echo "Enabling $frontend_domain_name.conf..."
-        sudo a2ensite "$frontend_domain_name.conf"
-    fi
+    # Enable the frontend sites and restart Apache if they were generated
+    for ((i=1; i<=2; i++)); do
+        if [ "${enable_frontends[$((i-1))]}" = true ]; then
+            echo "Enabling ${frontend_domain_names[$((i-1))]}.conf..."
+            sudo a2ensite "${frontend_domain_names[$((i-1))]}.conf"
+        fi
+    done
 
     sudo systemctl restart apache2
 
@@ -162,16 +170,18 @@ if [[ $enable_sites =~ ^[Yy]$ ]]; then
     enable_https
 else
     # Provide commands for the user to enable the sites and restart Apache manually
-    if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+    if [ $choice -eq 1 ] || [ $choice -eq 4 ]; then
         echo "To enable $backend_domain_name.conf, run:"
         echo "sudo a2ensite $backend_domain_name.conf"
     fi
 
-    # Show commands for enabling the frontend site if it was generated
-    if [ "$enable_frontend" = true ]; then
-        echo "To enable $frontend_domain_name.conf, run:"
-        echo "sudo a2ensite $frontend_domain_name.conf"
-    fi
+    # Show commands for enabling the frontend sites if they were generated
+    for ((i=1; i<=2; i++)); do
+        if [ "${enable_frontends[$((i-1))]}" = true ]; then
+            echo "To enable ${frontend_domain_names[$((i-1))]}.conf, run:"
+            echo "sudo a2ensite ${frontend_domain_names[$((i-1))]}.conf"
+        fi
+    done
 
     echo "To restart Apache, run:"
     echo "sudo systemctl restart apache2"
