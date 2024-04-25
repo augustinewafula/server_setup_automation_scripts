@@ -172,9 +172,14 @@ if [[ $is_backend =~ ^[Yy]$ ]]; then
 fi
 
 # Set up the frontends if needed
+setup_frontends=()
 for i in 1 2; do
-    read -p "Do you want to set up frontend $i? [y/N] " setup_frontend_$i
-    if [[ "${!setup_frontend_$i}" =~ ^[Yy]$ ]]; then
+    read -p "Do you want to set up frontend $i? [y/N] " response
+    setup_frontends+=("$response")
+done
+
+for i in 1 2; do
+    if [[ "${setup_frontends[$((i-1))]}" =~ ^[Yy]$ ]]; then
         run_task_with_output "Setting up frontend $i"
         setup_frontend $i
         task_completed "Setting up frontend $i"
