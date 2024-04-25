@@ -18,17 +18,24 @@ backend_domain_name=
 backend_site_path=                    
 
 # Frontend Configuration
+# Frontend 1 Configuration
 # Replace with the URL of the frontend repository (e.g., https://github.com/your_username/your_frontend_repo.git)
-frontend_repo_url=                    
+frontend1_repo_url=                    
 
 # Replace with the directory name of the frontend project within the repository (e.g., your_frontend_project)
-frontend_dir_name=                    
+frontend1_dir_name=                    
 
 # Replace with the domain name for your frontend server (e.g., frontend.example.com)
-frontend_domain_name=                  
+frontend1_domain_name=                  
 
 # Replace with the absolute path to deploy your frontend project
-frontend_site_path=                    
+frontend1_site_path=     
+
+# Frontend 2 Configuration
+frontend2_repo_url=
+frontend2_dir_name=
+frontend2_domain_name=
+frontend2_site_path=
 
 # MySQL Configuration
 # Replace with the MySQL username for your project (e.g., root or a custom username)

@@ -111,8 +111,9 @@ setup_backend() {
 
 # Function to set up frontend repository
 setup_frontend() {
-    local frontend_repo_url=$(read_value "frontend_repo_url")
-    local frontend_dir_name=$(read_value "frontend_dir_name")
+    local frontend_number=$1
+    local frontend_repo_url=$(read_value "frontend${frontend_number}_repo_url")
+    local frontend_dir_name=$(read_value "frontend${frontend_number}_dir_name")
     local backend_domain_name=$(read_value "backend_domain_name")
     local app_name=$(read_value "app_name")
 
@@ -170,15 +171,15 @@ if [[ $is_backend =~ ^[Yy]$ ]]; then
     task_completed "Setting up backend"
 fi
 
-# Set up the frontend if needed
-read -p "Do you want to set up the frontend? [y/N] " setup_frontend
-
-if [[ $setup_frontend =~ ^[Yy]$ ]]; then
-    backend_dir_name=$(read_value "backend_dir_name")
-    run_task_with_output "Setting up frontend"
-    setup_frontend
-    task_completed "Setting up frontend"
-fi
+# Set up the frontends if needed
+for i in 1 2; do
+    read -p "Do you want to set up frontend $i? [y/N] " setup_frontend_$i
+    if [[ ${setup_frontend_$i} =~ ^[Yy]$ ]]; then
+        run_task_with_output "Setting up frontend $i"
+        setup_frontend $i
+        task_completed "Setting up frontend $i"
+    fi
+done
 
 echo "Setup complete!"
 
