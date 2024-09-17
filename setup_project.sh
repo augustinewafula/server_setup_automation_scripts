@@ -102,6 +102,7 @@ setup_backend() {
 
         # Read the comma-separated variable names from the ADDITIONAL_ENV_VARS key in .env
         run_task_with_output "Setting additional environment variables in .env file"
+        cd "$DEFAULT_DIR"  # Return to the default directory
         env_vars_key=$(read_value "ADDITIONAL_ENV_VARS")
 
         # Convert the comma-separated list into an array
@@ -110,6 +111,8 @@ setup_backend() {
         # Loop through each variable name, read its value using read_value(), and update it in the .env file
         for var_name in "${additional_env_vars[@]}"; do
             var_value=$(read_value "$var_name")
+            
+            cd "$BACKEND_DIR_NAME"
 
             # Ensure that the variable value is properly quoted to handle special characters
             # Also handle the case where the variable might not exist in the .env file yet
@@ -121,11 +124,13 @@ setup_backend() {
                 echo "$var_name=$var_value" >> .env
                 echo "Added: $var_name=$var_value"
             fi
+            cd "$DEFAULT_DIR" 
         done
         task_completed "Setting additional environment variables in .env file"
 
         # Run database migrations
-        run_task_with_output "Running database migrations in backend"
+        run_task_with_output "Running database migrations in backend"0
+        cd "$BACKEND_DIR_NAME"
         php artisan migrate:fresh --seed
         task_completed "Running database migrations in backend"
     })
