@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONFIG_FILE="config.txt"
+CONFIG_FILE=".env"
 
 # Function to clean up directory name by removing any carriage return character
 clean_input() {
@@ -21,16 +21,16 @@ read_value() {
 }
 
 generate_backend() {
-    local backend_domain_name=$1
-    local backend_site_path=$2
+    local BACKEND_DOMAIN_NAME=$1
+    local BACKEND_SITE_PATH=$2
 
     echo "<VirtualHost *:80>
-    ServerAdmin admin@$backend_domain_name
-    ServerName $backend_domain_name
-    ServerAlias www.$backend_domain_name
-    DocumentRoot $backend_site_path
+    ServerAdmin admin@$BACKEND_DOMAIN_NAME
+    ServerName $BACKEND_DOMAIN_NAME
+    ServerAlias www.$BACKEND_DOMAIN_NAME
+    DocumentRoot $BACKEND_SITE_PATH
 
-    <Directory $backend_site_path/>
+    <Directory $BACKEND_SITE_PATH/>
             Options Indexes FollowSymLinks MultiViews
             AllowOverride All
             Order allow,deny
@@ -39,27 +39,27 @@ generate_backend() {
     </Directory>
 
     LogLevel debug
-    ErrorLog \${APACHE_LOG_DIR}/$backend_domain_name.error.log
-    CustomLog \${APACHE_LOG_DIR}/$backend_domain_name.access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/$BACKEND_DOMAIN_NAME.error.log
+    CustomLog \${APACHE_LOG_DIR}/$BACKEND_DOMAIN_NAME.access.log combined
 RewriteEngine on
-RewriteCond %{SERVER_NAME} =$backend_domain_name [OR]
-RewriteCond %{SERVER_NAME} =www.$backend_domain_name
+RewriteCond %{SERVER_NAME} =$BACKEND_DOMAIN_NAME [OR]
+RewriteCond %{SERVER_NAME} =www.$BACKEND_DOMAIN_NAME
 RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 </VirtualHost>"
 }
 
 generate_frontend() {
-    local frontend_domain_name=$1
-    local frontend_site_path=$2
+    local FRONTEND_DOMAIN_NAME=$1
+    local FRONTEND_SITE_PATH=$2
 
     echo "<VirtualHost *:80>
-    ServerAdmin admin@$frontend_domain_name
-    ServerName $frontend_domain_name
-    ServerAlias www.$frontend_domain_name
-    DocumentRoot $frontend_site_path
+    ServerAdmin admin@$FRONTEND_DOMAIN_NAME
+    ServerName $FRONTEND_DOMAIN_NAME
+    ServerAlias www.$FRONTEND_DOMAIN_NAME
+    DocumentRoot $FRONTEND_SITE_PATH
     DirectoryIndex index.html
 
-    <Directory $frontend_site_path/>
+    <Directory $FRONTEND_SITE_PATH/>
             Options Indexes FollowSymLinks MultiViews
             AllowOverride All
             Order allow,deny
@@ -68,11 +68,11 @@ generate_frontend() {
     </Directory>
 
     LogLevel debug
-    ErrorLog \${APACHE_LOG_DIR}/$frontend_domain_name.error.log
-    CustomLog \${APACHE_LOG_DIR}/$frontend_domain_name.access.log combined
+    ErrorLog \${APACHE_LOG_DIR}/$FRONTEND_DOMAIN_NAME.error.log
+    CustomLog \${APACHE_LOG_DIR}/$FRONTEND_DOMAIN_NAME.access.log combined
 RewriteEngine on
-RewriteCond %{SERVER_NAME} =$frontend_domain_name [OR]
-RewriteCond %{SERVER_NAME} =www.$frontend_domain_name
+RewriteCond %{SERVER_NAME} =$FRONTEND_DOMAIN_NAME [OR]
+RewriteCond %{SERVER_NAME} =www.$FRONTEND_DOMAIN_NAME
 RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
 </VirtualHost>"
 }
@@ -100,13 +100,13 @@ enable_https() {
     if [[ $enable_https =~ ^[Yy]$ ]]; then
         # Enable HTTPS using certbot for backend site
         if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
-            sudo certbot --apache -d "$backend_domain_name"
+            sudo certbot --apache -d "$BACKEND_DOMAIN_NAME"
         fi
 
         # Enable HTTPS using certbot for frontend sites if they were generated
         for ((i=1; i<=2; i++)); do
             if [ "${enable_frontends[$((i-1))]}" = true ]; then
-                sudo certbot --apache -d "${frontend_domain_names[$((i-1))]}"
+                sudo certbot --apache -d "${FRONTEND_DOMAIN_NAMES[$((i-1))]}"
             fi
         done
     else
@@ -115,7 +115,7 @@ enable_https() {
 }
 
 enable_frontends=(false false)
-frontend_domain_names=()
+FRONTEND_DOMAIN_NAMES=()
 
 echo "Do you want to generate v-hosts for [1] Backend, [2] Frontend 1, [3] Frontend 2, or [4] All?"
 read -p "Please enter the number corresponding to your choice: " choice
@@ -126,21 +126,21 @@ if [ $choice -lt 1 ] || [ $choice -gt 4 ]; then
 fi
 
 if [ $choice -eq 1 ] || [ $choice -eq 4 ]; then
-    backend_domain_name=$(read_value "backend_domain_name")
-    backend_site_path=$(read_value "backend_site_path")
+    BACKEND_DOMAIN_NAME=$(read_value "BACKEND_DOMAIN_NAME")
+    BACKEND_SITE_PATH=$(read_value "BACKEND_SITE_PATH")
 
-    save_config "$backend_domain_name" "$(generate_backend "$backend_domain_name" "$backend_site_path")"
+    save_config "$BACKEND_DOMAIN_NAME" "$(generate_backend "$BACKEND_DOMAIN_NAME" "$BACKEND_SITE_PATH")"
 fi
 
 for ((i=1; i<=2; i++)); do
     if [ $choice -eq $((i+1)) ] || [ $choice -eq 4 ]; then
         enable_frontends[$((i-1))]=true
 
-        frontend_domain_name=$(read_value "frontend${i}_domain_name")
-        frontend_site_path=$(read_value "frontend${i}_site_path")
-        frontend_domain_names+=("$frontend_domain_name")
+        FRONTEND_DOMAIN_NAME=$(read_value "FRONTEND${i}_DOMAIN_NAME")
+        FRONTEND_SITE_PATH=$(read_value "FRONTEND${i}_SITE_PATH)
+        FRONTEND_DOMAIN_NAMES+=("$FRONTEND_DOMAIN_NAME")
 
-        save_config "$frontend_domain_name" "$(generate_frontend "$frontend_domain_name" "$frontend_site_path")"
+        save_config "$FRONTEND_DOMAIN_NAME" "$(generate_frontend "$FRONTEND_DOMAIN_NAME" "$FRONTEND_SITE_PATH")"
     fi
 done
 
@@ -152,15 +152,15 @@ read -p "Do you want to enable the generated sites? [y/N] " enable_sites
 if [[ $enable_sites =~ ^[Yy]$ ]]; then
     # Enable the backend site and restart Apache
     if [ $choice -eq 1 ] || [ $choice -eq 4 ]; then
-        echo "Enabling $backend_domain_name.conf..."
-        sudo a2ensite "$backend_domain_name.conf"
+        echo "Enabling $BACKEND_DOMAIN_NAME.conf..."
+        sudo a2ensite "$BACKEND_DOMAIN_NAME.conf"
     fi
 
     # Enable the frontend sites and restart Apache if they were generated
     for ((i=1; i<=2; i++)); do
         if [ "${enable_frontends[$((i-1))]}" = true ]; then
-            echo "Enabling ${frontend_domain_names[$((i-1))]}.conf..."
-            sudo a2ensite "${frontend_domain_names[$((i-1))]}.conf"
+            echo "Enabling ${FRONTEND_DOMAIN_NAMES[$((i-1))]}.conf..."
+            sudo a2ensite "${FRONTEND_DOMAIN_NAMES[$((i-1))]}.conf"
         fi
     done
 
@@ -171,15 +171,15 @@ if [[ $enable_sites =~ ^[Yy]$ ]]; then
 else
     # Provide commands for the user to enable the sites and restart Apache manually
     if [ $choice -eq 1 ] || [ $choice -eq 4 ]; then
-        echo "To enable $backend_domain_name.conf, run:"
-        echo "sudo a2ensite $backend_domain_name.conf"
+        echo "To enable $BACKEND_DOMAIN_NAME.conf, run:"
+        echo "sudo a2ensite $BACKEND_DOMAIN_NAME.conf"
     fi
 
     # Show commands for enabling the frontend sites if they were generated
     for ((i=1; i<=2; i++)); do
         if [ "${enable_frontends[$((i-1))]}" = true ]; then
-            echo "To enable ${frontend_domain_names[$((i-1))]}.conf, run:"
-            echo "sudo a2ensite ${frontend_domain_names[$((i-1))]}.conf"
+            echo "To enable ${FRONTEND_DOMAIN_NAMES[$((i-1))]}.conf, run:"
+            echo "sudo a2ensite ${FRONTEND_DOMAIN_NAMES[$((i-1))]}.conf"
         fi
     done
 

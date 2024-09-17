@@ -4,9 +4,9 @@ This repository contains Bash scripts to automate the setup of various server co
 
 ## Current Scripts
 
-1. **Apache Virtual Host Generator (`generate_vhosts.sh`):** This script generates Apache virtual host configurations based on user input. It can also read values from a `config.txt` file for automatic configuration if available.
+1. **Apache Virtual Host Generator (`generate_vhosts.sh`):** This script generates Apache virtual host configurations based on user input. It can also read values from a `.env` file for automatic configuration if available.
 
-2. **MySQL Database and User Generator (`create_mysql_db.sh`):** This script creates a new MySQL user and database, also based on user input. It can also read values from a `config.txt` file for automatic configuration if available.
+2. **MySQL Database and User Generator (`create_mysql_db.sh`):** This script creates a new MySQL user and database, also based on user input. It can also read values from a `.env` file for automatic configuration if available.
 
 3. **Project Setup (`setup_project.sh`)** This script automates the setup of a web development environment by combining the functionalities of `generate_vhosts.sh` and `create_mysql_db.sh`. It sets up both Apache virtual hosts and MySQL databases for Laravel backend and Vue.js frontend repositories. Additionally, it sets up the backend repository with required dependencies, database credentials, and performs database migration.
 
@@ -18,20 +18,20 @@ The scripts need to be run on a system with Apache and MySQL installed, and with
 
 1. Download the script files to your local machine.
 
-2. **Important: Copy the contents of `config.example.txt` and save it as `config.txt` with the correct values.** Replace the placeholders with the actual values for your setup. Here's the format of the `config.txt` file:
+2. **Important: Copy the contents of `config.example.txt` and save it as `.env` with the correct values.** Replace the placeholders with the actual values for your setup. Here's the format of the `.env` file:
 
    ```plaintext
-   backend_domain_name=your_backend_domain
-   backend_site_path=your_backend_path
-   frontend_domain_name=your_frontend_domain
-   frontend_site_path=your_frontend_path
-   mysql_username=your_mysql_username
-   mysql_password=your_mysql_password
-   mysql_database=your_mysql_database
-   mysql_host=your_mysql_host
+   BACKEND_DOMAIN_NAME=your_backend_domain
+   BACKEND_SITE_PATH=your_backend_path
+   FRONTEND_DOMAIN_NAME=your_frontend_domain
+   FRONTEND_SITE_PATH=your_frontend_path
+   MYSQL_USERNAME=your_MYSQL_USERNAME
+   MYSQL_PASSWORD=your_MYSQL_PASSWORD
+   MYSQL_DATABASE=your_MYSQL_DATABASE
+   MYSQL_HOST=your_MYSQL_HOST
    ```
 
-   Replace `your_backend_domain`, `your_backend_path`, `your_frontend_domain`, `your_frontend_path`, `your_mysql_username`, `your_mysql_password`, `your_mysql_database`, and `your_mysql_host` with the actual values.
+   Replace `your_backend_domain`, `your_backend_path`, `your_frontend_domain`, `your_frontend_path`, `your_MYSQL_USERNAME`, `your_MYSQL_PASSWORD`, `your_MYSQL_DATABASE`, and `your_MYSQL_HOST` with the actual values.
 
 3. Make the scripts executable with the following commands:
 
@@ -49,9 +49,9 @@ The scripts need to be run on a system with Apache and MySQL installed, and with
    sudo ./setup_project.sh
    ```
 
-   For both `generate_vhosts.sh` and `create_mysql_db.sh`, if the `config.txt` file is present and contains values, the scripts will read from the file and skip the interactive prompts. If the `config.txt` file is empty or missing any values, the scripts will prompt the user for input for the missing values.
+   For both `generate_vhosts.sh` and `create_mysql_db.sh`, if the `.env` file is present and contains values, the scripts will read from the file and skip the interactive prompts. If the `.env` file is empty or missing any values, the scripts will prompt the user for input for the missing values.
 
-   For `setup_project.sh`, it will automatically use the values from the `config.txt` file and perform the following tasks:
+   For `setup_project.sh`, it will automatically use the values from the `.env` file and perform the following tasks:
    - Clone or pull the backend (Laravel) repository using a personal access token.
    - Install backend dependencies, set up the database, and perform migrations.
    - Clone or pull the frontend repository and install frontend dependencies.
@@ -69,4 +69,4 @@ sudo a2ensite your_domain_name.conf
 sudo systemctl restart apache2
 ```
 
-Please note that these scripts automate the setup process for your Laravel backend and Vue.js frontend web development environment. Ensure that you have reviewed and updated the `config.txt` file with the correct values before running the scripts.
+Please note that these scripts automate the setup process for your Laravel backend and Vue.js frontend web development environment. Ensure that you have reviewed and updated the `.env` file with the correct values before running the scripts.
