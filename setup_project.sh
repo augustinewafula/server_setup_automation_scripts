@@ -6,7 +6,7 @@ CONFIG_FILE=".env"
 # Function to clean up directory name by removing any carriage return character
 clean_input() {
     local input=$1
-    echo $(echo $input | tr -d '\r')
+    echo $(echo "$input" | tr -d '\r')
 }
 
 # Function to read value from config file or prompt user for input
@@ -95,9 +95,9 @@ setup_backend() {
         local db_user=$(read_value "MYSQL_USERNAME")
         local db_password=$(read_value "MYSQL_PASSWORD")
         cd "$BACKEND_DIR_NAME"
-        sed -i "s/DB_DATABASE=.*$/DB_DATABASE=$db_name/g" .env
-        sed -i "s/DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
-        sed -i "s/DB_PASSWORD=.*$/DB_PASSWORD=\"$db_password\"/g" .env
+        sed -i "s/^DB_DATABASE=.*$/DB_DATABASE=$db_name/g" .env
+        sed -i "s/^DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
+        sed -i "s/^DB_PASSWORD=.*$/DB_PASSWORD=\"$db_password\"/g" .env
         task_completed "Updating database credentials on .env file"
 
         # Read the comma-separated variable names from the ADDITIONAL_ENV_VARS key in .env
@@ -110,7 +110,14 @@ setup_backend() {
         # Loop through each variable name, read its value using read_value(), and update it in the .env file
         for var_name in "${additional_env_vars[@]}"; do
             var_value=$(read_value "$var_name")
-            sed -i "s/^$var_name=.*$/$var_name=$var_value/g" .env
+
+            # Ensure that the variable value is properly quoted to handle special characters
+            # Also handle the case where the variable might not exist in the .env file yet
+            if grep -q "^$var_name=" .env; then
+                sed -i "s/^$var_name=.*\$/$var_name=$var_value/" .env
+            else
+                echo "$var_name=$var_value" >> .env
+            fi
         done
         task_completed "Setting additional environment variables in .env file"
 
