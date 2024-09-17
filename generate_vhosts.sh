@@ -137,7 +137,7 @@ for ((i=1; i<=2; i++)); do
         enable_frontends[$((i-1))]=true
 
         FRONTEND_DOMAIN_NAME=$(read_value "FRONTEND${i}_DOMAIN_NAME")
-        FRONTEND_SITE_PATH=$(read_value "FRONTEND${i}_SITE_PATH)
+        FRONTEND_SITE_PATH=$(read_value "FRONTEND${i}_SITE_PATH")
         FRONTEND_DOMAIN_NAMES+=("$FRONTEND_DOMAIN_NAME")
 
         save_config "$FRONTEND_DOMAIN_NAME" "$(generate_frontend "$FRONTEND_DOMAIN_NAME" "$FRONTEND_SITE_PATH")"
