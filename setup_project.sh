@@ -141,14 +141,14 @@ setup_backend() {
 # Function to set up frontend repository
 setup_frontend() {
     local frontend_number=$1
-    local FRONTEND1_REPO_URL=$(read_value "frontend${frontend_number}_repo_url")
-    local FRONTEND1_DIR_NAME=$(read_value "frontend${frontend_number}_dir_name")
+    local FRONTEND_REPO_URL=$(read_value "FRONTEND${frontend_number}_REPO_URL")
+    local FRONTEND_DIR_NAME=$(read_value "FRONTEND${frontend_number}_DIR_NAME")
     local BACKEND_DOMAIN_NAME=$(read_value "BACKEND_DOMAIN_NAME")
     local APP_NAME=$(read_value "APP_NAME")
 
-    clone_or_pull_repo "$FRONTEND1_REPO_URL" "$FRONTEND1_DIR_NAME"
+    clone_or_pull_repo "$FRONTEND_REPO_URL" "$FRONTEND_DIR_NAME"
 
-    (cd "$FRONTEND1_DIR_NAME" && {
+    (cd "$FRONTEND_DIR_NAME" && {
         # Check if Yarn is installed
         if ! command -v yarn &> /dev/null; then
             echo "Yarn not found. Please install Yarn before proceeding."
