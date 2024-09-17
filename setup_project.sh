@@ -114,9 +114,12 @@ setup_backend() {
             # Ensure that the variable value is properly quoted to handle special characters
             # Also handle the case where the variable might not exist in the .env file yet
             if grep -q "^$var_name=" .env; then
-                sed -i "s/^$var_name=.*\$/$var_name=$var_value/" .env
+                escaped_value=$(printf '%s' "$var_value" | sed 's/[&/\]/\\&/g')
+                sed -i "s/^$var_name=.*\$/$var_name=$escaped_value/" .env
+                echo "Updated: $var_name=$var_value"
             else
                 echo "$var_name=$var_value" >> .env
+                echo "Added: $var_name=$var_value"
             fi
         done
         task_completed "Setting additional environment variables in .env file"
