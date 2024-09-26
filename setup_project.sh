@@ -149,6 +149,12 @@ setup_frontend() {
     clone_or_pull_repo "$FRONTEND_REPO_URL" "$FRONTEND_DIR_NAME"
 
     (cd "$FRONTEND_DIR_NAME" && {
+        # Check if Yarn is installed
+        if ! command -v yarn &> /dev/null; then
+            echo "Yarn not found. Please install Yarn globally or make it accessible in the current shell."
+            exit 1
+        fi
+
         # Run yarn install to install dependencies
         run_task_with_output "Running yarn install in frontend"
         yarn install || { echo "Error: Yarn install failed."; exit 1; }
