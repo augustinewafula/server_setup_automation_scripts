@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CONFIG_FILE="config.txt"
+CONFIG_FILE=".env"
 
 # Function to clean up directory name by removing any carriage return character
 clean_input() {
@@ -21,31 +21,31 @@ read_value() {
 }
 
 # Read MySQL user and password from config file
-mysql_user=$(read_value "mysql_username")
-mysql_password=$(read_value "mysql_password")
-mysql_database=$(read_value "mysql_database")
-mysql_host=$(read_value "mysql_host")
+MYSQL_USER=$(read_value "MYSQL_USERNAME")
+MYSQL_PASSWORD=$(read_value "MYSQL_PASSWORD")
+MYSQL_DATABASE=$(read_value "MYSQL_DATABASE")
+MYSQL_HOST=$(read_value "MYSQL_HOST")
 
 # Check if user already exists
-userCheck=$(mysql -u root -p"$mysql_password" -sse "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '$mysql_user')")
+userCheck=$(mysql -u root -p"$MYSQL_PASSWORD" -sse "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '$MYSQL_USER')")
 
 # Check if database already exists
-dbCheck=$(mysql -u root -p"$mysql_password" -sse "SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$mysql_database')")
+dbCheck=$(mysql -u root -p"$MYSQL_PASSWORD" -sse "SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$MYSQL_DATABASE')")
 
 if [ $userCheck -eq 0 ]; then
-    userCommand="CREATE USER '$mysql_user'@'$mysql_host' IDENTIFIED BY '$mysql_password';GRANT USAGE ON *.* TO '$mysql_user'@'$mysql_host';"
+    userCommand="CREATE USER '$MYSQL_USER'@'$MYSQL_HOST' IDENTIFIED BY '$MYSQL_PASSWORD';GRANT USAGE ON *.* TO '$MYSQL_USER'@'$MYSQL_HOST';"
 else
     userCommand=""
-    echo "User '$mysql_user' already exists, skipping user creation."
+    echo "User '$MYSQL_USER' already exists, skipping user creation."
 fi
 
 if [ $dbCheck -eq 0 ]; then
-    dbCommand="CREATE DATABASE \`${mysql_database}\`;GRANT ALL ON \`${mysql_database}\`.* TO '$mysql_user'@'$mysql_host';"
+    dbCommand="CREATE DATABASE \`${MYSQL_DATABASE}\`;GRANT ALL ON \`${MYSQL_DATABASE}\`.* TO '$MYSQL_USER'@'$MYSQL_HOST';"
 else
     dbCommand=""
-    echo "Database '$mysql_database' already exists, skipping database creation."
+    echo "Database '$MYSQL_DATABASE' already exists, skipping database creation."
 fi
 
 commands="$userCommand$dbCommand FLUSH PRIVILEGES;"
 
-echo "${commands}" | /usr/bin/mysql -u root -p"$mysql_password"
+echo "${commands}" | /usr/bin/mysql -u root -p"$MYSQL_PASSWORD"

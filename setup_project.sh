@@ -1,12 +1,12 @@
 #!/bin/bash
 
 DEFAULT_DIR=$(pwd)
-CONFIG_FILE="config.txt"
+CONFIG_FILE=".env"
 
 # Function to clean up directory name by removing any carriage return character
 clean_input() {
     local input=$1
-    echo $(echo $input | tr -d '\r')
+    echo $(echo "$input" | tr -d '\r')
 }
 
 # Function to read value from config file or prompt user for input
@@ -37,7 +37,7 @@ task_completed() {
 clone_or_pull_repo() {
     local url=$1
     local dir_name=$2
-    local access_token=$(read_value "github_access_token")
+    local access_token=$(read_value "GITHUB_ACCESS_TOKEN")
 
     if [ -d "$dir_name" ]; then
         run_task_with_output "Git pull in $dir_name"
@@ -53,13 +53,13 @@ clone_or_pull_repo() {
 
 # Function to set up backend (Laravel) repository
 setup_backend() {
-    local backend_repo_url=$(read_value "backend_repo_url")
-    local backend_dir_name=$(read_value "backend_dir_name")
-    local app_name=$(read_value "app_name")
+    local BACKEND_REPO_URL=$(read_value "BACKEND_REPO_URL")
+    local BACKEND_DIR_NAME=$(read_value "BACKEND_DIR_NAME")
+    local APP_NAME=$(read_value "APP_NAME")
 
-    clone_or_pull_repo "$backend_repo_url" "$backend_dir_name"
+    clone_or_pull_repo "$BACKEND_REPO_URL" "$BACKEND_DIR_NAME"
 
-    (cd "$backend_dir_name" && {
+    (cd "$BACKEND_DIR_NAME" && {
         run_task_with_output "Running composer install in backend"
         composer install
         task_completed "Running composer install in backend"
@@ -79,7 +79,7 @@ setup_backend() {
         task_completed "Generating Laravel application key in backend"
 
         # Set APP_NAME, APP_ENV to "production" and APP_DEBUG to "false" in .env
-        sed -i "s/^APP_NAME=.*$/APP_NAME=$app_name/g" .env
+        sed -i "s/^APP_NAME=.*$/APP_NAME=$APP_NAME/g" .env
         sed -i "s/^APP_ENV=.*$/APP_ENV=production/g" .env
         sed -i "s/^APP_DEBUG=.*$/APP_DEBUG=false/g" .env
 
@@ -91,17 +91,46 @@ setup_backend() {
 
         # Update database credentials in .env file
         run_task_with_output "Updating database credentials on .env file"
-        local db_name=$(read_value "mysql_database")
-        local db_user=$(read_value "mysql_username")
-        local db_password=$(read_value "mysql_password")
-        cd "$backend_dir_name"
-        sed -i "s/DB_DATABASE=.*$/DB_DATABASE=$db_name/g" .env
-        sed -i "s/DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
-        sed -i "s/DB_PASSWORD=.*$/DB_PASSWORD=\"$db_password\"/g" .env
+        local db_name=$(read_value "MYSQL_DATABASE")
+        local db_user=$(read_value "MYSQL_USERNAME")
+        local db_password=$(read_value "MYSQL_PASSWORD")
+        cd "$BACKEND_DIR_NAME"
+        sed -i "s/^DB_DATABASE=.*$/DB_DATABASE=$db_name/g" .env
+        sed -i "s/^DB_USERNAME=.*$/DB_USERNAME=$db_user/g" .env
+        sed -i "s/^DB_PASSWORD=.*$/DB_PASSWORD=\"$db_password\"/g" .env
         task_completed "Updating database credentials on .env file"
 
+        # Read the comma-separated variable names from the ADDITIONAL_ENV_VARS key in .env
+        run_task_with_output "Setting additional environment variables in .env file"
+        cd "$DEFAULT_DIR"  # Return to the default directory
+        env_vars_key=$(read_value "ADDITIONAL_ENV_VARS")
+
+        # Convert the comma-separated list into an array
+        IFS=',' read -r -a additional_env_vars <<< "$env_vars_key"
+
+        # Loop through each variable name, read its value using read_value(), and update it in the .env file
+        for var_name in "${additional_env_vars[@]}"; do
+            var_value=$(read_value "$var_name")
+            
+            cd "$BACKEND_DIR_NAME"
+
+            # Ensure that the variable value is properly quoted to handle special characters
+            # Also handle the case where the variable might not exist in the .env file yet
+            if grep -q "^$var_name=" .env; then
+                escaped_value=$(printf '%s' "$var_value" | sed 's/[&/\]/\\&/g')
+                sed -i "s/^$var_name=.*\$/$var_name=$escaped_value/" .env
+                echo "Updated: $var_name=$var_value"
+            else
+                echo "$var_name=$var_value" >> .env
+                echo "Added: $var_name=$var_value"
+            fi
+            cd "$DEFAULT_DIR" 
+        done
+        task_completed "Setting additional environment variables in .env file"
+
         # Run database migrations
-        run_task_with_output "Running database migrations in backend"
+        run_task_with_output "Running database migrations in backend"0
+        cd "$BACKEND_DIR_NAME"
         php artisan migrate:fresh --seed
         task_completed "Running database migrations in backend"
     })
@@ -112,17 +141,14 @@ setup_backend() {
 # Function to set up frontend repository
 setup_frontend() {
     local frontend_number=$1
-    local frontend_repo_url=$(read_value "frontend${frontend_number}_repo_url")
-    local frontend_dir_name=$(read_value "frontend${frontend_number}_dir_name")
-    local backend_domain_name=$(read_value "backend_domain_name")
-    local app_name=$(read_value "app_name")
+    local FRONTEND_REPO_URL=$(read_value "FRONTEND${frontend_number}_REPO_URL")
+    local FRONTEND_DIR_NAME=$(read_value "FRONTEND${frontend_number}_DIR_NAME")
+    local BACKEND_DOMAIN_NAME=$(read_value "BACKEND_DOMAIN_NAME")
+    local APP_NAME=$(read_value "APP_NAME")
 
-    # Clone or pull the frontend repository
-    clone_or_pull_repo "$frontend_repo_url" "$frontend_dir_name"
+    clone_or_pull_repo "$FRONTEND_REPO_URL" "$FRONTEND_DIR_NAME"
 
-    # Navigate into the frontend directory
-    (cd "$frontend_dir_name" && {
-
+    (cd "$FRONTEND_DIR_NAME" && {
         # Check if Yarn is installed
         if ! command -v yarn &> /dev/null; then
             echo "Yarn not found. Please install Yarn before proceeding."
@@ -136,9 +162,9 @@ setup_frontend() {
         # Copy environment example file and configure it
         cp .env.example .env.local
 
-        # Update .env.local with backend and app-specific environment values
-        sed -i "s/^VUE_APP_API_BASE_URL=.*$/VUE_APP_API_BASE_URL=https:\/\/$backend_domain_name\/api\/v1\//g" .env.local
-        sed -i "s/^VUE_APP_TITLE=.*$/VUE_APP_TITLE=$app_name/g" .env.local
+        # Update .env.local with appropriate values
+        sed -i "s/^VUE_APP_API_BASE_URL=.*$/VUE_APP_API_BASE_URL=https:\/\/$BACKEND_DOMAIN_NAME\/api\/v1\//g" .env.local
+        sed -i "s/^VUE_APP_TITLE=.*$/VUE_APP_TITLE=$APP_NAME/g" .env.local
 
         echo "Updated .env.local with backend and app information."
 
@@ -179,7 +205,7 @@ read -p "Do you want to set up the backend? [y/N] " is_backend
 is_backend=$(clean_input "$is_backend")
 
 if [[ $is_backend =~ ^[Yy]$ ]]; then
-    backend_repo_url=$(read_value "backend_repo_url")
+    BACKEND_REPO_URL=$(read_value "BACKEND_REPO_URL")
     run_task_with_output "Setting up backend"
     setup_backend
     task_completed "Setting up backend"
