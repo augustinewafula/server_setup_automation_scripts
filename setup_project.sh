@@ -117,32 +117,46 @@ setup_frontend() {
     local backend_domain_name=$(read_value "backend_domain_name")
     local app_name=$(read_value "app_name")
 
+    # Clone or pull the frontend repository
     clone_or_pull_repo "$frontend_repo_url" "$frontend_dir_name"
 
+    # Navigate into the frontend directory
     (cd "$frontend_dir_name" && {
+
         # Check if Yarn is installed
         if ! command -v yarn &> /dev/null; then
             echo "Yarn not found. Please install Yarn before proceeding."
             exit 1
         fi
 
+        # Run yarn install to install dependencies
         run_task_with_output "Running yarn install in frontend"
         yarn install || { echo "Error: Yarn install failed."; exit 1; }
+
+        # Copy environment example file and configure it
         cp .env.example .env.local
 
-        # Update .env.local with appropriate values
+        # Update .env.local with backend and app-specific environment values
         sed -i "s/^VUE_APP_API_BASE_URL=.*$/VUE_APP_API_BASE_URL=https:\/\/$backend_domain_name\/api\/v1\//g" .env.local
         sed -i "s/^VUE_APP_TITLE=.*$/VUE_APP_TITLE=$app_name/g" .env.local
 
         echo "Updated .env.local with backend and app information."
 
-        # Run 'yarn build' to build frontend assets
-        run_task_with_output "Running yarn build in frontend"
-        yarn build || { echo "Error: Yarn build failed."; exit 1; }
-        task_completed "Running yarn build in frontend"
+        # Check if deploy.sh script exists, if so, use it for deployment
+        if [[ -f "./deploy.sh" ]]; then
+            echo "Found deploy.sh in $frontend_dir_name. Using it for deployment..."
+            chmod +x ./deploy.sh
+            ./deploy.sh || { echo "Error: deploy.sh script failed."; exit 1; }
+        else
+            # If deploy.sh is not present, run the default yarn build process
+            run_task_with_output "Running yarn build in frontend"
+            yarn build || { echo "Error: Yarn build failed."; exit 1; }
+            task_completed "Running yarn build in frontend"
+        fi
     })
 
-    cd "$DEFAULT_DIR"  # Return to the default directory
+    # Return to the default directory
+    cd "$DEFAULT_DIR"
 }
 
 
