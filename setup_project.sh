@@ -149,9 +149,14 @@ setup_frontend() {
     clone_or_pull_repo "$FRONTEND_REPO_URL" "$FRONTEND_DIR_NAME"
 
     (cd "$FRONTEND_DIR_NAME" && {
+        # Load nvm and set the default Node.js version
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # Load nvm
+        nvm use default  # Use the default Node.js version
+        
         # Check if Yarn is installed
         if ! command -v yarn &> /dev/null; then
-            echo "Yarn not found. Please install Yarn globally or make it accessible in the current shell."
+            echo "Yarn not found. Please install Yarn before proceeding."
             exit 1
         fi
 
@@ -184,7 +189,6 @@ setup_frontend() {
     # Return to the default directory
     cd "$DEFAULT_DIR"
 }
-
 
 
 # Function to set up vhosts using generate_vhosts.sh script
