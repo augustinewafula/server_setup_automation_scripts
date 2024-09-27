@@ -41,12 +41,12 @@ The scripts need to be run on a system with Apache and MySQL installed, and with
    chmod +x setup_project.sh
    ```
 
-4. Run the scripts with root privileges:
+4. Run the scripts:
 
    ```bash
-   sudo ./generate_vhosts.sh
-   sudo ./create_mysql_db.sh
-   sudo ./setup_project.sh
+   ./setup_project.sh
+   ./generate_vhosts.sh
+   ./create_mysql_db.sh
    ```
 
    For both `generate_vhosts.sh` and `create_mysql_db.sh`, if the `.env` file is present and contains values, the scripts will read from the file and skip the interactive prompts. If the `.env` file is empty or missing any values, the scripts will prompt the user for input for the missing values.
