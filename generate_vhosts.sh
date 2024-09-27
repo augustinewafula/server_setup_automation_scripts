@@ -99,7 +99,7 @@ enable_https() {
     read -p "Do you want to enable HTTPS on the created sites? [y/N] " enable_https
     if [[ $enable_https =~ ^[Yy]$ ]]; then
         # Enable HTTPS using certbot for backend site
-        if [ $choice -eq 1 ] || [ $choice -eq 3 ]; then
+        if [ $choice -eq 1 ] || [ $choice -eq 4 ]; then
             sudo certbot --apache -d "$BACKEND_DOMAIN_NAME"
         fi
 
@@ -113,6 +113,7 @@ enable_https() {
         echo "Skipping HTTPS enablement."
     fi
 }
+
 
 enable_frontends=(false false)
 FRONTEND_DOMAIN_NAMES=()
