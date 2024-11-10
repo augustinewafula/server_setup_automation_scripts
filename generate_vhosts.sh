@@ -158,17 +158,6 @@ generate_backend() {
         Require all granted
     </Directory>
 
-    # Enable CORS headers
-    Header always set Access-Control-Allow-Origin "*"
-    Header always set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
-
-    # Security headers
-    Header always set X-Frame-Options "SAMEORIGIN"
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-
     LogLevel warn
     ErrorLog ${APACHE_LOG_DIR}/$BACKEND_DOMAIN_NAME.error.log
     CustomLog ${APACHE_LOG_DIR}/$BACKEND_DOMAIN_NAME.access.log combined
@@ -208,18 +197,6 @@ generate_frontend() {
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule . /index.html [L]
     </Directory>
-
-    # Cache control for static assets
-    <FilesMatch "\.(ico|pdf|jpg|jpeg|png|gif|js|css|svg|woff2?)$">
-        Header set Cache-Control "max-age=31536000, public"
-    </FilesMatch>
-
-    # Security headers
-    Header always set X-Frame-Options "SAMEORIGIN"
-    Header always set X-XSS-Protection "1; mode=block"
-    Header always set X-Content-Type-Options "nosniff"
-    Header always set Referrer-Policy "strict-origin-when-cross-origin"
-    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 
     LogLevel warn
     ErrorLog ${APACHE_LOG_DIR}/$FRONTEND_DOMAIN_NAME.error.log
