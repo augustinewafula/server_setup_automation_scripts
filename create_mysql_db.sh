@@ -28,6 +28,15 @@ check_user_exists() {
     mysql -u root -p"$password" -sse "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '$user' AND host = '$host')"
 }
 
+# Function to check if user has permissions on database
+check_user_database_permissions() {
+    local user=$1
+    local host=$2
+    local database=$3
+    local password=$4
+    mysql -u root -p"$password" -sse "SELECT COUNT(*) FROM information_schema.schema_privileges WHERE grantee = \"'$user'@'$host'\" AND table_schema = '$database'"
+}
+
 # Function to create user for a specific host
 create_user_for_host() {
     local user=$1
@@ -43,14 +52,20 @@ create_user_for_host() {
         echo "Creating user '$user'@'$host'..." >&2
         commands="CREATE USER '$user'@'$host' IDENTIFIED BY '$password';"
         commands="${commands}GRANT USAGE ON *.* TO '$user'@'$host';"
-        
-        # Grant database permissions if database exists
-        local dbExists=$(mysql -u root -p"$password" -sse "SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$database')")
-        if [ $dbExists -eq 1 ]; then
-            commands="${commands}GRANT ALL ON \`${database}\`.* TO '$user'@'$host';"
-        fi
     else
-        echo "User '$user'@'$host' already exists, skipping creation." >&2
+        echo "User '$user'@'$host' already exists." >&2
+    fi
+    
+    # Always check and grant database permissions if database exists
+    local dbExists=$(mysql -u root -p"$password" -sse "SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$database')")
+    if [ $dbExists -eq 1 ]; then
+        local hasPermissions=$(check_user_database_permissions "$user" "$host" "$database" "$password")
+        if [ $hasPermissions -eq 0 ]; then
+            echo "Granting database permissions to '$user'@'$host' for database '$database'..." >&2
+            commands="${commands}GRANT ALL ON \`${database}\`.* TO '$user'@'$host';"
+        else
+            echo "User '$user'@'$host' already has permissions on database '$database'." >&2
+        fi
     fi
     
     echo "$commands"
