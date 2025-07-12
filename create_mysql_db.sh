@@ -40,7 +40,7 @@ create_user_for_host() {
     local userExists=$(check_user_exists "$user" "$host" "$password")
     
     if [ $userExists -eq 0 ]; then
-        echo "Creating user '$user'@'$host'..."
+        echo "Creating user '$user'@'$host'..." >&2
         commands="CREATE USER '$user'@'$host' IDENTIFIED BY '$password';"
         commands="${commands}GRANT USAGE ON *.* TO '$user'@'$host';"
         
@@ -50,7 +50,7 @@ create_user_for_host() {
             commands="${commands}GRANT ALL ON \`${database}\`.* TO '$user'@'$host';"
         fi
     else
-        echo "User '$user'@'$host' already exists, skipping creation."
+        echo "User '$user'@'$host' already exists, skipping creation." >&2
     fi
     
     echo "$commands"
@@ -111,7 +111,12 @@ while true; do
 done
 
 # Combine all commands
-commands="${dbCommand}${userCommands}FLUSH PRIVILEGES;"
+commands="${dbCommand}${userCommands}"
+
+# Only add FLUSH PRIVILEGES if there are actual commands to execute
+if [ -n "$commands" ]; then
+    commands="${commands}FLUSH PRIVILEGES;"
+fi
 
 # Display summary
 echo
@@ -124,22 +129,27 @@ for host in "${hosts[@]}"; do
 done
 echo
 
-# Confirm execution
-read -p "Execute these MySQL commands? (y/n): " confirm
-if [[ $confirm =~ ^[Yy]$ ]]; then
-    echo "Executing MySQL commands..."
-    echo "${commands}" | /usr/bin/mysql -u root -p"$MYSQL_PASSWORD"
-    
-    if [ $? -eq 0 ]; then
-        echo "MySQL setup completed successfully!"
-        echo
-        echo "You can now connect to the database using:"
-        for host in "${hosts[@]}"; do
-            echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -h $host $MYSQL_DATABASE"
-        done
+# Only execute if there are commands to run
+if [ -n "$commands" ]; then
+    # Confirm execution
+    read -p "Execute these MySQL commands? (y/n): " confirm
+    if [[ $confirm =~ ^[Yy]$ ]]; then
+        echo "Executing MySQL commands..."
+        echo "${commands}" | /usr/bin/mysql -u root -p"$MYSQL_PASSWORD"
+        
+        if [ $? -eq 0 ]; then
+            echo "MySQL setup completed successfully!"
+            echo
+            echo "You can now connect to the database using:"
+            for host in "${hosts[@]}"; do
+                echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -h $host $MYSQL_DATABASE"
+            done
+        else
+            echo "Error executing MySQL commands. Please check the output above."
+        fi
     else
-        echo "Error executing MySQL commands. Please check the output above."
+        echo "Operation cancelled."
     fi
 else
-    echo "Operation cancelled."
+    echo "No MySQL commands to execute. Database and user already exist with correct permissions."
 fi
