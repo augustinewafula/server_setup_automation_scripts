@@ -20,12 +20,19 @@ read_value() {
     echo "$value"
 }
 
+# Function to test MySQL connection
+test_mysql_connection() {
+    local password=$1
+    mysql -u root -p"$password" -e "SELECT 1;" >/dev/null 2>&1
+    return $?
+}
+
 # Function to check if user exists for a specific host
 check_user_exists() {
     local user=$1
     local host=$2
     local password=$3
-    mysql -u root -p"$password" -sse "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '$user' AND host = '$host')"
+    mysql -u root -p"$password" -sse "SELECT EXISTS(SELECT 1 FROM mysql.user WHERE user = '$user' AND host = '$host')" 2>/dev/null
 }
 
 # Function to check if user has permissions on database
@@ -34,63 +41,140 @@ check_user_database_permissions() {
     local host=$2
     local database=$3
     local password=$4
-    mysql -u root -p"$password" -sse "SELECT COUNT(*) FROM information_schema.schema_privileges WHERE grantee = \"'$user'@'$host'\" AND table_schema = '$database'"
+    mysql -u root -p"$password" -sse "SELECT COUNT(*) FROM information_schema.schema_privileges WHERE grantee = \"'$user'@'$host'\" AND table_schema = '$database'" 2>/dev/null
 }
 
-# Function to create user for a specific host
-create_user_for_host() {
+# Function to check if database exists
+check_database_exists() {
+    local database=$1
+    local password=$2
+    mysql -u root -p"$password" -sse "SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$database')" 2>/dev/null
+}
+
+# Function to create or update user for a specific host
+create_or_update_user_for_host() {
     local user=$1
     local host=$2
-    local password=$3
-    local database=$4
+    local user_password=$3
+    local root_password=$4
+    local database=$5
     local commands=""
+    local action_taken=false
     
     # Check if user exists for this specific host
-    local userExists=$(check_user_exists "$user" "$host" "$password")
+    local userExists=$(check_user_exists "$user" "$host" "$root_password")
     
     if [ $userExists -eq 0 ]; then
         echo "Creating user '$user'@'$host'..." >&2
-        commands="CREATE USER '$user'@'$host' IDENTIFIED BY '$password';"
-        commands="${commands}GRANT USAGE ON *.* TO '$user'@'$host';"
+        commands="CREATE USER '$user'@'$host' IDENTIFIED BY '$user_password';"
+        action_taken=true
     else
-        echo "User '$user'@'$host' already exists." >&2
+        echo "User '$user'@'$host' already exists. Updating password..." >&2
+        commands="ALTER USER '$user'@'$host' IDENTIFIED BY '$user_password';"
+        action_taken=true
     fi
     
-    # Always check and grant database permissions if database exists
-    local dbExists=$(mysql -u root -p"$password" -sse "SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$database')")
-    if [ $dbExists -eq 1 ]; then
-        local hasPermissions=$(check_user_database_permissions "$user" "$host" "$database" "$password")
+    # Always ensure basic usage grant exists
+    commands="${commands}GRANT USAGE ON *.* TO '$user'@'$host';"
+    
+    # Check and grant database permissions if database exists or will be created
+    local dbExists=$(check_database_exists "$database" "$root_password")
+    if [ $dbExists -eq 1 ] || [ "$CREATE_DATABASE" = true ]; then
+        local hasPermissions=$(check_user_database_permissions "$user" "$host" "$database" "$root_password")
         if [ $hasPermissions -eq 0 ]; then
             echo "Granting database permissions to '$user'@'$host' for database '$database'..." >&2
-            commands="${commands}GRANT ALL ON \`${database}\`.* TO '$user'@'$host';"
+            commands="${commands}GRANT ALL PRIVILEGES ON \`${database}\`.* TO '$user'@'$host';"
+            action_taken=true
         else
-            echo "User '$user'@'$host' already has permissions on database '$database'." >&2
+            echo "Re-granting database permissions to '$user'@'$host' for database '$database' (ensuring consistency)..." >&2
+            commands="${commands}GRANT ALL PRIVILEGES ON \`${database}\`.* TO '$user'@'$host';"
         fi
     fi
     
-    echo "$commands"
+    if [ "$action_taken" = true ]; then
+        echo "$commands"
+    else
+        echo ""
+    fi
 }
 
-# Read MySQL user and password from config file
+# Function to validate input parameters
+validate_inputs() {
+    if [ -z "$MYSQL_USER" ] || [ -z "$MYSQL_PASSWORD" ] || [ -z "$MYSQL_DATABASE" ] || [ -z "$MYSQL_HOST" ]; then
+        echo "Error: All required parameters must be provided (MYSQL_USERNAME, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_HOST)"
+        exit 1
+    fi
+    
+    # Validate MySQL connection
+    if ! test_mysql_connection "$ROOT_PASSWORD"; then
+        echo "Error: Cannot connect to MySQL with root password. Please check your root password."
+        exit 1
+    fi
+}
+
+# Function to display summary
+display_summary() {
+    local hosts_array=("$@")
+    echo
+    echo "=== SUMMARY ==="
+    echo "Database: $MYSQL_DATABASE"
+    echo "User: $MYSQL_USER"
+    echo "User Password: $MYSQL_PASSWORD"
+    echo "Hosts that will have access:"
+    for host in "${hosts_array[@]}"; do
+        echo "  - $host"
+    done
+    echo
+}
+
+# Function to display connection examples
+display_connection_examples() {
+    local hosts_array=("$@")
+    echo "You can now connect to the database using:"
+    for host in "${hosts_array[@]}"; do
+        if [ "$host" = "localhost" ] || [ "$host" = "127.0.0.1" ]; then
+            echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE"
+        else
+            echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -h $host $MYSQL_DATABASE"
+        fi
+    done
+}
+
+# Main script execution starts here
+echo "=== MySQL Database and User Setup Script ==="
+echo
+
+# Read configuration values
 MYSQL_USER=$(read_value "MYSQL_USERNAME")
 MYSQL_PASSWORD=$(read_value "MYSQL_PASSWORD")
 MYSQL_DATABASE=$(read_value "MYSQL_DATABASE")
 MYSQL_HOST=$(read_value "MYSQL_HOST")
 
-# Check if database already exists
-dbCheck=$(mysql -u root -p"$MYSQL_PASSWORD" -sse "SELECT EXISTS(SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$MYSQL_DATABASE')")
+# Get root password (don't store this in config file for security)
+echo "Please enter the MySQL root password:"
+read -s ROOT_PASSWORD
+echo
 
-# Create database if it doesn't exist
+# Validate all inputs
+validate_inputs
+
+# Check if database already exists
+CREATE_DATABASE=false
+dbCheck=$(check_database_exists "$MYSQL_DATABASE" "$ROOT_PASSWORD")
+
+# Prepare database command if needed
 dbCommand=""
 if [ $dbCheck -eq 0 ]; then
-    dbCommand="CREATE DATABASE \`${MYSQL_DATABASE}\`;"
+    dbCommand="CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+    CREATE_DATABASE=true
     echo "Database '$MYSQL_DATABASE' will be created."
 else
-    echo "Database '$MYSQL_DATABASE' already exists, skipping database creation."
+    echo "Database '$MYSQL_DATABASE' already exists."
 fi
 
-# Create user for the primary host
-userCommands=$(create_user_for_host "$MYSQL_USER" "$MYSQL_HOST" "$MYSQL_PASSWORD" "$MYSQL_DATABASE")
+# Create or update user for the primary host
+echo "Processing primary host: $MYSQL_HOST"
+userCommands=$(create_or_update_user_for_host "$MYSQL_USER" "$MYSQL_HOST" "$MYSQL_PASSWORD" "$ROOT_PASSWORD" "$MYSQL_DATABASE")
 
 # Store all hosts for later use
 hosts=("$MYSQL_HOST")
@@ -104,6 +188,12 @@ while true; do
         read -p "Enter the additional host (e.g., 'localhost', '192.168.1.%', '%' for any host): " additional_host
         additional_host=$(clean_input "$additional_host")
         
+        # Validate host input
+        if [ -z "$additional_host" ]; then
+            echo "Error: Host cannot be empty."
+            continue
+        fi
+        
         # Check if this host was already added
         host_exists=false
         for existing_host in "${hosts[@]}"; do
@@ -115,7 +205,8 @@ while true; do
         
         if [ "$host_exists" = false ]; then
             hosts+=("$additional_host")
-            additional_commands=$(create_user_for_host "$MYSQL_USER" "$additional_host" "$MYSQL_PASSWORD" "$MYSQL_DATABASE")
+            echo "Processing additional host: $additional_host"
+            additional_commands=$(create_or_update_user_for_host "$MYSQL_USER" "$additional_host" "$MYSQL_PASSWORD" "$ROOT_PASSWORD" "$MYSQL_DATABASE")
             userCommands="${userCommands}${additional_commands}"
         else
             echo "Host '$additional_host' already added, skipping."
@@ -128,43 +219,39 @@ done
 # Combine all commands
 commands="${dbCommand}${userCommands}"
 
-# Only add FLUSH PRIVILEGES if there are actual commands to execute
+# Always add FLUSH PRIVILEGES to ensure changes take effect
 if [ -n "$commands" ]; then
     commands="${commands}FLUSH PRIVILEGES;"
 fi
 
 # Display summary
-echo
-echo "=== SUMMARY ==="
-echo "Database: $MYSQL_DATABASE"
-echo "User: $MYSQL_USER"
-echo "Hosts that will have access:"
-for host in "${hosts[@]}"; do
-    echo "  - $host"
-done
-echo
+display_summary "${hosts[@]}"
 
-# Only execute if there are commands to run
+# Execute commands if there are any
 if [ -n "$commands" ]; then
     # Confirm execution
     read -p "Execute these MySQL commands? (y/n): " confirm
     if [[ $confirm =~ ^[Yy]$ ]]; then
         echo "Executing MySQL commands..."
-        echo "${commands}" | /usr/bin/mysql -u root -p"$MYSQL_PASSWORD"
         
-        if [ $? -eq 0 ]; then
+        # Execute commands and capture both stdout and stderr
+        if echo "${commands}" | mysql -u root -p"$ROOT_PASSWORD" 2>&1; then
             echo "MySQL setup completed successfully!"
             echo
-            echo "You can now connect to the database using:"
-            for host in "${hosts[@]}"; do
-                echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -h $host $MYSQL_DATABASE"
-            done
+            display_connection_examples "${hosts[@]}"
         else
             echo "Error executing MySQL commands. Please check the output above."
+            exit 1
         fi
     else
         echo "Operation cancelled."
+        exit 0
     fi
 else
-    echo "No MySQL commands to execute. Database and user already exist with correct permissions."
+    echo "No MySQL commands to execute."
+    echo
+    display_connection_examples "${hosts[@]}"
 fi
+
+echo
+echo "Setup completed. Configuration saved to $CONFIG_FILE"
