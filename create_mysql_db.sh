@@ -134,10 +134,30 @@ display_connection_examples() {
     for host in "${hosts_array[@]}"; do
         if [ "$host" = "localhost" ] || [ "$host" = "127.0.0.1" ]; then
             echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD $MYSQL_DATABASE"
+            echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -h $host $MYSQL_DATABASE"
         else
             echo "  mysql -u $MYSQL_USER -p$MYSQL_PASSWORD -h $host $MYSQL_DATABASE"
         fi
     done
+}
+
+# Function to ensure localhost access when using 127.0.0.1
+ensure_localhost_access() {
+    local user=$1
+    local user_password=$2
+    local root_password=$3
+    local database=$4
+    local commands=""
+    
+    # If primary host is 127.0.0.1, also create localhost user for compatibility
+    if [ "$MYSQL_HOST" = "127.0.0.1" ]; then
+        echo "Also ensuring 'localhost' access for compatibility..."
+        local localhost_commands=$(create_or_update_user_for_host "$user" "localhost" "$user_password" "$root_password" "$database")
+        commands="${commands}${localhost_commands}"
+        hosts+=("localhost")
+    fi
+    
+    echo "$commands"
 }
 
 # Main script execution starts here
@@ -150,10 +170,8 @@ MYSQL_PASSWORD=$(read_value "MYSQL_PASSWORD")
 MYSQL_DATABASE=$(read_value "MYSQL_DATABASE")
 MYSQL_HOST=$(read_value "MYSQL_HOST")
 
-# Get root password (don't store this in config file for security)
-echo "Please enter the MySQL root password:"
-read -s ROOT_PASSWORD
-echo
+# Read MySQL root password from config file or prompt
+ROOT_PASSWORD=$(read_value "MYSQL_ROOT_PASSWORD")
 
 # Validate all inputs
 validate_inputs
@@ -178,6 +196,10 @@ userCommands=$(create_or_update_user_for_host "$MYSQL_USER" "$MYSQL_HOST" "$MYSQ
 
 # Store all hosts for later use
 hosts=("$MYSQL_HOST")
+
+# Ensure localhost access if using 127.0.0.1
+localhostCommands=$(ensure_localhost_access "$MYSQL_USER" "$MYSQL_PASSWORD" "$ROOT_PASSWORD" "$MYSQL_DATABASE")
+userCommands="${userCommands}${localhostCommands}"
 
 # Ask if user wants to add more hosts
 while true; do
