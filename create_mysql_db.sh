@@ -171,7 +171,7 @@ MYSQL_DATABASE=$(read_value "MYSQL_DATABASE")
 MYSQL_HOST=$(read_value "MYSQL_HOST")
 
 # Read MySQL root password from config file or prompt
-ROOT_PASSWORD=$(read_value "MYSQL_ROOT_PASSWORD")
+ROOT_PASSWORD=$(read_value "MYSQL_PASSWORD")
 
 # Validate all inputs
 validate_inputs
