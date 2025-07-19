@@ -151,7 +151,7 @@ ensure_localhost_access() {
     
     # If primary host is 127.0.0.1, also create localhost user for compatibility
     if [ "$MYSQL_HOST" = "127.0.0.1" ]; then
-        echo "Also ensuring 'localhost' access for compatibility..."
+        echo "Also ensuring 'localhost' access for compatibility..." >&2
         local localhost_commands=$(create_or_update_user_for_host "$user" "localhost" "$user_password" "$root_password" "$database")
         commands="${commands}${localhost_commands}"
         hosts+=("localhost")
